@@ -11,8 +11,10 @@ uint8_t upos;
 int8_t pos;
 int16_t mpos;
 
+int invertMouse = 1;        //Invert mouse orientation
+
 int vertValue, horzValue;  // Stores current analog output of each axis
-const int sensitivity = 200;  // Higher sensitivity value = slower mouse, should be <= about 500
+const int sensitivity = 1;  // Higher sensitivity value = slower mouse, should be <= about 500
 int mouseClickFlag = 0;
 
 void setup() {
@@ -28,8 +30,16 @@ void loop() {
   mpos = myACE.mpos();               // get multiturn position - signed -32768 to +32767
 
   if (upos != oldPos) {            // did we move?
+    if (upos < oldPos ){
+      invertMouse = -1;
+    } 
+    else{
+      invertMouse = 1;
+    }
     oldPos = upos;                 // remember where we are
-    Serial.println(mpos, DEC);
-    Mouse.move(0, ((mpos / sensitivity)), 0); // move mouse on y axis
+    //Serial.println(pos, DEC);
+    //Serial.println(upos, DEC);
+    Serial.println(mpos, DEC);    
+    Mouse.move(0, (invertMouse *(mpos / sensitivity)), 0); // move mouse on y axis
   }
 }
