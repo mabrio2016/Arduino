@@ -1,12 +1,14 @@
 // 28-Aug-2023 | Using the Rotary Encoder E38S6_600 
-// addred a 20 homs resiator from 5V to reset pin, to avoid atou reset the Arduino when The CAT is enabled (DTR  -> low) 
+// addred a 20 homs resiator from 5V to reset pin, to avoid atou reset the Arduino when The CAT is enabled (DTR  -> low)
+// need to use the Heltec ESP8266 Series Dev-boards - > Wifi Kit 8 to be able to run the heltec.h to disply the data correctly in the 0.91″ OLED display. (https://www.arduinoecia.com.br/como-usar-o-modulo-esp8266-com-display-oled-embutido/)
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <U8g2lib.h>
+//#include <U8g2lib.h>
+#include <heltec.h>
 #include <EEPROM.h>
 
-U8X8_SSD1306_128X32_UNIVISION_HW_I2C u8x8(16);
+//U8X8_SSD1306_128X32_UNIVISION_HW_I2C u8x8(16);
  
 //ICACHE_RAM_ATTR void updateFrequency();
 //ICACHE_RAM_ATTR void askForFrequency();
@@ -37,6 +39,8 @@ volatile bool LockEncoder = false;
 long lastUpdateMillis = 0;
 char RotaryNumber[16];
 char Received_Freq[16];
+char *Hz = " Hz";
+char Freq_Hz[15];
 
 void initWifi();
 void initComm();
@@ -56,8 +60,8 @@ void setup()
   initWifi();
   initComm();
   initGpio();
-  u8x8.begin();
-  //u8x8.setFont(u8x8_font_artosserif8_r); //u8x8_font_saikyosansbold8_n   u8x8_font_artosserif8_r  u8x8_font_8x13_1x2_r
+  //u8x8.begin();
+  Heltec.begin(true, false);
 }
 void initWifi()
 {
@@ -96,6 +100,9 @@ void loop()
     asked = true;
     LockEncoder = true;
     askForFrequency();
+    // Heltec.display->clear();
+    // Heltec.display->setFont(ArialMT_Plain_16);
+    // Heltec.display->drawString(0,0,"Test Marco");
   }
   if (!asked){
     Analog_Reading = analogRead(ADC_pin);
@@ -134,8 +141,8 @@ void askForFrequency(){
   delay(20);
   Serial.println("FA;");
   delay(20);
-  // asked = true;
-  // LockEncoder = true;
+  asked = true;
+  LockEncoder = true;
   if(Serial.available()){
     String rxresponse = Serial.readStringUntil(';');
     if (rxresponse.startsWith("FA")){
@@ -170,13 +177,12 @@ void ai0() {
 
 void Display_Encoder()
 {
-  //u8x8.setFont(u8x8_font_artosserif8_r);
-  //u8x8.draw2x2String(0,0,"Freq:   ");
-  u8x8.setFont(u8x8_font_saikyosansbold8_n);
-  u8x8.clearLine(2);
-  u8x8.clearLine(3);
   itoa(counter, RotaryNumber, 10);
-  u8x8.draw2x2String(0,2, RotaryNumber);
+  Heltec.display->clear();
+  Heltec.display->setFont(ArialMT_Plain_16);
+  Heltec.display->drawString(0,0,Freq_Hz);
+  Heltec.display->drawString(0,17,RotaryNumber);
+  Heltec.display->display(); //Mostra as informacoes no display
 }
 
 void sendFrequency(){
@@ -194,46 +200,37 @@ void sendFrequency(){
 void Display_Recived()
 {
   itoa(readFrequency, Received_Freq, 10);
-  u8x8.setFont(u8x8_font_artosserif8_r); //u8x8_font_8x13_1x2_r
-  u8x8.draw2x2String(0,0,Received_Freq);
-  u8x8.setFont(u8x8_font_saikyosansbold8_n);
-  u8x8.clearLine(2);
-  u8x8.clearLine(3);
-  u8x8.draw2x2String(0,2,RotaryNumber);
-  //Format_frequency();
+  Heltec.display->clear();
+  Heltec.display->setFont(ArialMT_Plain_16);
+  strcpy(Freq_Hz,ltos(readFrequency, Received_Freq, 10));
+  strcat(Freq_Hz,Hz);
+  Heltec.display->drawString(0,0,Freq_Hz);
+  Heltec.display->display(); //Mostra as informacoes no display
 }
 
-void Format_frequency()
+char *ultos_recursive(unsigned long val, char *s, unsigned radix, int pos)
 {
-  float floatfrq;
-
-  if (readFrequency < 1000)
-  {
-    Serial.print(readFrequency); Serial.println(" Hz");
+  int c;
+  if (val >= radix)
+    s = ultos_recursive(val / radix, s, radix, pos+1);
+  c = val % radix;
+  c += (c < 10 ? '0' : 'a' - 10);
+  *s++ = c;
+  if (pos % 3 == 0) *s++ = '.';
+  return s;
+}
+char *ltos(long val, char *s, int radix)
+{
+  if (radix < 2 || radix > 36) {
+    s[0] = 0;
+  } else {
+    char *p = s;
+    if (radix == 10 && val < 0) {
+      val = -val;
+      *p++ = '-';
+    }
+    p = ultos_recursive(val, p, radix, 0) - 1;
+    *p = 0;
   }
-  else if (readFrequency < 1000000)
-  {
-    floatfrq = readFrequency;
-    floatfrq /= 1000;
-    Serial.print(floatfrq,3); Serial.println(" kHz");
-  }
-  else if (readFrequency < 1000000000)
-  {
-    floatfrq = readFrequency;
-    floatfrq /= 1000;
-    floatfrq /= 1000;
-    Serial.print(floatfrq,3); Serial.println(" MHz");
-  }
-  else if (readFrequency < 1000000000000)
-  {
-    floatfrq = readFrequency;
-    floatfrq /= 1000;
-    floatfrq /= 1000;
-    floatfrq /= 1000;
-    Serial.print(floatfrq,3); Serial.println(" GHz");
-  }
-  else
-  {
-    Serial.print(readFrequency); Serial.println(" Hz");
-  }
+  return s;
 }
