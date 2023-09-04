@@ -62,6 +62,10 @@ void setup()
   initGpio();
   //u8x8.begin();
   Heltec.begin(true, false);
+  Heltec.display->clear();
+  Heltec.display->setFont(ArialMT_Plain_24);
+  Heltec.display->drawString(0,5,"! Connected");
+  Heltec.display->display(); //Mostra as informacoes no display
 }
 void initWifi()
 {
@@ -100,9 +104,6 @@ void loop()
     asked = true;
     LockEncoder = true;
     askForFrequency();
-    // Heltec.display->clear();
-    // Heltec.display->setFont(ArialMT_Plain_16);
-    // Heltec.display->drawString(0,0,"Test Marco");
   }
   if (!asked){
     Analog_Reading = analogRead(ADC_pin);
@@ -124,9 +125,9 @@ void loop()
     TempCounter = counter;
   }    
 }
-
 void sendSquech(int value){
-  Analog_Value = map(value, -16, 197, 0, 255);
+  Analog_Value = map(value, -20, 170, 0, 255);
+  Display_Squelch();
   char result[3]; 
   sprintf(result, "%03d", Analog_Value);
   serialTxFlush("SQ0" + String(result) + ";;");
@@ -143,6 +144,10 @@ void askForFrequency(){
   delay(20);
   asked = true;
   LockEncoder = true;
+  Heltec.display->clear();
+  Heltec.display->setFont(ArialMT_Plain_24);
+  Heltec.display->drawString(0,5,"! Connected");
+  Heltec.display->display(); //Mostra as informacoes no display
   if(Serial.available()){
     String rxresponse = Serial.readStringUntil(';');
     if (rxresponse.startsWith("FA")){
@@ -180,14 +185,32 @@ void Display_Encoder()
   itoa(counter, RotaryNumber, 10);
   Heltec.display->clear();
   Heltec.display->setFont(ArialMT_Plain_16);
-  Heltec.display->drawString(0,0,Freq_Hz);
-  Heltec.display->drawString(0,17,RotaryNumber);
+  Heltec.display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  Heltec.display->drawString(128,0,Freq_Hz);
+  Heltec.display->setTextAlignment(TEXT_ALIGN_LEFT);
+  Heltec.display->drawString(0,17,"Encoder:");
+  Heltec.display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  Heltec.display->drawString(128,17, String(counter));
   Heltec.display->display(); //Mostra as informacoes no display
+}
+
+void Display_Squelch(){
+  Heltec.display->clear();
+  Heltec.display->setFont(ArialMT_Plain_16);
+  Heltec.display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  Heltec.display->drawString(128,0,Freq_Hz);
+  Heltec.display->setTextAlignment(TEXT_ALIGN_LEFT);
+  Heltec.display->drawString(0,17,"Squelch:");
+  Heltec.display->setTextAlignment(TEXT_ALIGN_RIGHT);
+  Heltec.display->drawString(128,17, String(Filtered_Analog_Reading));
+  Heltec.display->display(); //Mostra as informacoes no display
+
 }
 
 void sendFrequency(){
   volatile long temp = readFrequency + (counter * 10);
-  if (temp < 100){
+  if (temp < 1000){
+    readFrequency = 0;
     temp = 1000;
     counter = 0;
   }  
@@ -202,9 +225,10 @@ void Display_Recived()
   itoa(readFrequency, Received_Freq, 10);
   Heltec.display->clear();
   Heltec.display->setFont(ArialMT_Plain_16);
+  Heltec.display->setTextAlignment(TEXT_ALIGN_RIGHT);
   strcpy(Freq_Hz,ltos(readFrequency, Received_Freq, 10));
   strcat(Freq_Hz,Hz);
-  Heltec.display->drawString(0,0,Freq_Hz);
+  Heltec.display->drawString(128,0,Freq_Hz);
   Heltec.display->display(); //Mostra as informacoes no display
 }
 
