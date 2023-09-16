@@ -1,0 +1,1 @@
+TFT_eSPI ESP32 - SerialBT have the same functionality and display the received text to the TFT diplay
