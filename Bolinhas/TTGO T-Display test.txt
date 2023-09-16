@@ -1,0 +1,2 @@
+TFT_eSPI ESP32 - SerialBT have the same functionality and display the received text to the TFT diplay
+Use the ESP32 Dev Board from Board Manager to compile the code in Arduino IDE.
