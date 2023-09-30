@@ -23,8 +23,8 @@ const int pwmResolution = 8;
 const int pwmLedChannelTFT = 0;
 
 
-const char* ssid     = "MM";       ///EDIT SSID
-const char* password = "lobstertail1!"; //EDIT PASSWORD
+const char* ssid     = "Eliband";       ///EDIT SSID
+const char* password = "2l31n2RJ948"; //EDIT PASSWORD
 String town="Rio";              //EDIT TOWN
 String Country="BR";                //EDIT COUNTRY
 const String endpoint = "http://api.openweathermap.org/data/2.5/weather?q="+town+","+Country+"&units=metric&APPID=";
@@ -150,7 +150,7 @@ void loop() {
   
   if(count==0) {
     getData();
-  {  
+  }  
   count++;
   if(count>2000) {
    count=0;
